@@ -20,7 +20,11 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-  app.enableCors();
+  app.enableCors({
+  origin:process.env.FRONTEND_URL || '*', // ⚠️ Peligroso para prod real, pero perfecto para salir del paso HOY
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+});
   await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();
