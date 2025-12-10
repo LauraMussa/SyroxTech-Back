@@ -1,0 +1,5 @@
+
+
+### Obtener estadisticas de produtos
+GET http://localhost:3001/dashboard/inventory-stats
+Content-Type: application/json
