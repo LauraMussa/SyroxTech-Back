@@ -16,15 +16,12 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
   app.useGlobalPipes(
     new ValidationPipe({
+      transform: true,
       whitelist: true,
       forbidNonWhitelisted: true,
     }),
   );
-  app.enableCors({
-  origin:process.env.FRONTEND_URL || '*', // ⚠️ Peligroso para prod real, pero perfecto para salir del paso HOY
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-});
+  app.enableCors();
   await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();

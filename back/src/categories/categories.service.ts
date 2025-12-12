@@ -1,7 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
-import { ReorderCategoriesDto, UpdateCategoryDto } from './dto/update-category.dto';
+import {
+  ReorderCategoriesDto,
+  UpdateCategoryDto,
+} from './dto/update-category.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { PaginationDto } from 'src/products/dto/pagination.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -53,18 +57,33 @@ export class CategoriesService {
     });
   }
 
-  ///me trae categorias null y con numero y subcategorias
-  async findAll() {
-    return this.prisma.category.findMany({
+  async findAll(paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const totalCategories = await this.prisma.category.count();
+
+    const data = await this.prisma.category.findMany({
+      skip,
+      take: limit,
       include: {
         parent: true,
-        children: true, // para mostrar el contador "7 subcategorías"
+        children: true,
       },
       orderBy: { position: 'asc' },
     });
+    const lastPage = Math.ceil(totalCategories / limit);
+
+    return {
+      data,
+      meta: {
+        totalCategories,
+        page,
+        lastPage,
+      },
+    };
   }
 
-  //me trae categorias por categorias padre con sus hijos
   async findAllTree() {
     return this.prisma.category.findMany({
       where: { parentId: null },
@@ -75,41 +94,49 @@ export class CategoriesService {
     });
   }
 
+  async findAllParent() {
+    return this.prisma.category.findMany({
+      where: { parentId: null },
+      orderBy: { position: 'asc' },
+    });
+  }
+
   async findOne(categoryId: string) {
     return await this.findCategory(categoryId);
   }
 
   async update(id: string, dto: UpdateCategoryDto) {
-  
-  const currentCategory = await this.findCategory(id);
+    const currentCategory = await this.findCategory(id);
 
-  if (dto.parentId !== undefined && dto.parentId !== currentCategory.parentId) {
-    
-    // última posición del nuevo padre
-    const lastItem = await this.prisma.category.findFirst({
-      where: { parentId: dto.parentId },
-      orderBy: { position: 'desc' }, 
+    if (
+      dto.parentId !== undefined &&
+      dto.parentId !== currentCategory.parentId
+    ) {
+      // última posición del nuevo padre
+      const lastItem = await this.prisma.category.findFirst({
+        where: { parentId: dto.parentId },
+        orderBy: { position: 'desc' },
+      });
+
+      dto.position = lastItem ? lastItem.position + 1 : 1;
+    }
+
+    return this.prisma.category.update({
+      where: { id },
+      data: dto,
     });
-
-    dto.position = lastItem ? lastItem.position + 1 : 1;
   }
 
-  return this.prisma.category.update({
-    where: { id },
-    data: dto,
-  });
-}
+  async reorder(dto: ReorderCategoriesDto) {
+    const updates = dto.categoryIds.map((id, index) =>
+      this.prisma.category.update({
+        where: { id },
+        data: { position: index + 1 },
+      }),
+    );
 
-async reorder(dto: ReorderCategoriesDto) {
-  const updates = dto.categoryIds.map((id, index) => 
-    this.prisma.category.update({
-      where: { id },
-      data: { position: index + 1 }, 
-    })
-  );
-
-  return await this.prisma.$transaction(updates);
-}
+    return await this.prisma.$transaction(updates);
+  }
   //eliminar categoria
   async remove(categoryId: string, force: boolean) {
     const categoryFound = await this.prisma.category.findFirst({

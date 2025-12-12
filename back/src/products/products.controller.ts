@@ -7,13 +7,17 @@ import {
   Param,
   Delete,
   Query,
+  Put,
+  UseGuards,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationDto } from './dto/pagination.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('products')
+@UseGuards(JwtAuthGuard)
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
@@ -31,12 +35,11 @@ export class ProductsController {
   findTopSelling() {
     return this.productsService.findTopSelling();
   }
-  
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(id);
   }
-
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
@@ -46,5 +49,10 @@ export class ProductsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productsService.remove(id);
+  }
+
+  @Patch('update-status/:id')
+  toggleActive(@Param('id') id: string) {
+    return this.productsService.toggleActive(id);
   }
 }
