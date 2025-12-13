@@ -72,7 +72,7 @@ export class AuthController {
       expires: new Date(0),
       path: '/',
       maxAge: 1000 * 60 * 60 * 24,
-      domain: '.koyeb.app' // A veces ayuda, a veces rompe.
+      // domain: '.koyeb.app' // A veces ayuda, a veces rompe.
 
     });
 
