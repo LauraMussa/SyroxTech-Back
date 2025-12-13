@@ -69,8 +69,9 @@ export class AuthController {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
-      expires: new Date(0), 
+      expires: new Date(0),
       path: '/',
+      maxAge: 1000 * 60 * 60 * 24,
     });
 
     return { message: 'Sesión cerrada exitosamente' };
